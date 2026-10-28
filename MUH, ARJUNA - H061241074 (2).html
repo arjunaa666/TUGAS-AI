@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard Kepadatan Penduduk Kota Makassar 2024</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--navy:#0b2545;--teal:#13a89e;--blue:#3e7cb1;--soft:#c9d6e3;--bg:#f4f7fa;--ink:#14213d;--mute:#5b6b7f;--line:#dfe6ee;--bad:#c2410c;--good:#15803d}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 Inter,"Segoe UI",system-ui,sans-serif}
+header{background:var(--navy);color:#fff;padding:22px 32px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px}
+header h1{margin:0;font-size:26px}header p,.meta{margin:4px 0 0;color:#b9c8dc;font-size:14px}.meta{text-align:right}
+.bar{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line);padding:12px 32px;display:flex;flex-wrap:wrap;gap:14px 22px;align-items:flex-end}
+.fg{display:flex;flex-direction:column;gap:4px}.fg>label{font-size:12px;color:var(--mute);font-weight:600}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:#fff;color:var(--ink);padding:5px 10px;border-radius:999px;font:500 13px Inter,"Segoe UI",sans-serif;cursor:pointer}
+.chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+input,select{border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:14px Inter,"Segoe UI",sans-serif;background:#fff;color:var(--ink)}
+input[type=range]{padding:0;width:150px}
+.reset{background:var(--teal);color:#fff;border:0;border-radius:6px;padding:8px 14px;font:600 14px Inter,"Segoe UI",sans-serif;cursor:pointer}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+main{padding:24px 32px 40px;max-width:1700px;margin:0 auto}
+.note{background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:18px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-bottom:20px}
+.kpi{background:#fff;border:1px solid var(--line);border-top:4px solid var(--teal);border-radius:8px;padding:16px 18px}
+.kpi .l{font-size:13px;color:var(--mute);font-weight:600}.kpi .v{font-size:30px;font-weight:700;color:var(--navy);margin:2px 0}.kpi .t{font-size:13px;font-weight:600}
+.up{color:var(--bad)}.dn{color:var(--good)}.na{color:var(--mute)}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-bottom:16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px 18px;min-width:0}
+.card h2{margin:0 0 2px;font-size:17px;color:var(--navy)}.card .sub{margin:0 0 10px;font-size:13px;color:var(--mute)}
+.c12{grid-column:span 12}.c7{grid-column:span 7}.c6{grid-column:span 6}.c5{grid-column:span 5}.c4{grid-column:span 4}
+.ch{position:relative;height:300px}.ch.tall{height:480px}
+.ins{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px}
+.in{border-left:5px solid var(--blue);background:#f8fbfd;border-radius:6px;padding:12px 16px}.in.warn{border-color:var(--bad);background:#fff8f3}.in.good{border-color:var(--good);background:#f5fbf7}
+.in h3{margin:0 0 4px;font-size:15px;color:var(--navy)}.in p{margin:0;font-size:14px}.in .rec{margin-top:6px;font-weight:600}
+details summary{cursor:pointer;font-weight:600;color:var(--navy);font-size:17px}
+.tw{overflow-x:auto;margin-top:12px}table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{background:#eef3f8;color:var(--navy)}.n{text-align:right}
+footer{color:var(--mute);font-size:13px;text-align:center;padding-bottom:24px}
+@media(max-width:1000px){.c7,.c6,.c5,.c4{grid-column:span 12}.bar,main,header{padding-left:16px;padding-right:16px}}
+@media print{.bar{position:static}.reset{display:none}body{background:#fff}}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Dashboard Kepadatan Penduduk Kota Makassar</h1><p>Kepadatan penduduk menurut kecamatan, 2024 (jiwa per km²)</p></div>
+  <div class="meta">Data tahun 2024<br><span id="scope"></span></div>
+</header>
+
+<div class="bar" role="region" aria-label="Filter">
+  <div class="fg"><label>Kelas kepadatan</label><div class="chips" id="fKelas"></div></div>
+  <div class="fg"><label>Kepadatan minimum: <b id="vMin"></b></label><input type="range" id="rMin" min="0" max="35000" step="500" value="0"></div>
+  <div class="fg"><label>Kepadatan maksimum: <b id="vMax"></b></label><input type="range" id="rMax" min="0" max="35000" step="500" value="35000"></div>
+  <div class="fg"><label>Kecamatan</label><input list="kl" id="fK" placeholder="Semua kecamatan"><datalist id="kl"></datalist></div>
+  <div class="fg"><label>Urutan peringkat</label><select id="ord"><option value="d">Terpadat ke terendah</option><option value="a">Terendah ke terpadat</option><option value="n">Nama (A–Z)</option></select></div>
+  <button class="reset" id="reset">Atur ulang filter</button>
+</div>
+
+<main>
+  <div class="note"><b>Catatan data:</b> data hanya memuat satu ukuran (kepadatan 2024) untuk 15 kecamatan, tanpa jumlah penduduk, luas wilayah, atau tahun pembanding. Karena itu tidak ada tren waktu, dan rata-rata kecamatan di bawah adalah rata-rata sederhana (tidak ditimbang luas). Angka kota (8.408) adalah baris “Jumlah” dari sumber, yaitu kepadatan seluruh Kota Makassar.</div>
+  <section class="kpis" id="kpis"></section>
+
+  <div class="grid">
+    <div class="card c7"><h2>Peringkat kepadatan per kecamatan</h2><p class="sub">Warna menunjukkan kelas kepadatan. Garis putus-putus = kepadatan Kota Makassar (8.408).</p><div class="ch tall"><canvas id="cRank"></canvas></div></div>
+    <div class="card c5"><h2>Selisih terhadap rata-rata kota</h2><p class="sub">Persentase di atas/di bawah 8.408 jiwa/km².</p><div class="ch tall"><canvas id="cDev"></canvas></div></div>
+    <div class="card c4"><h2>Komposisi kelas kepadatan</h2><p class="sub">Jumlah kecamatan per kelas.</p><div class="ch"><canvas id="cKelas"></canvas></div></div>
+    <div class="card c4"><h2>Rata-rata kepadatan per kelas</h2><p class="sub">Jiwa per km².</p><div class="ch"><canvas id="cAvg"></canvas></div></div>
+    <div class="card c4"><h2>Kurva peringkat</h2><p class="sub">Seberapa curam jarak antar kecamatan.</p><div class="ch"><canvas id="cCurve"></canvas></div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px"><h2>Temuan utama</h2><p class="sub">Dihitung dari kecamatan yang sedang tampil, ditulis sebagai pertanyaan atau saran untuk pimpinan.</p><div class="ins" id="ins"></div></div>
+  <div class="card"><details open><summary>Tabel data kecamatan</summary><div class="tw"><table id="tbl"></table></div></details></div>
+</main>
+<footer>Sumber: Kepadatan Penduduk Menurut Kecamatan di Kota Makassar, 2024 (file Excel yang diunggah). Kelas: Sangat padat ≥ 25.000 · Padat 10.000–24.999 · Sedang 5.000–9.999 · Rendah &lt; 5.000 jiwa/km² (ambang ditetapkan untuk dashboard ini).</footer>
+
+<script>
+/* ===== DATA (embedded, jiwa/km2, 2024) ===== */
+const KOTA = 8408;
+const DATA = [["Mariso",32306],["Mamajang",25811],["Tamalate",9363],["Rappocini",16346],["Makassar",32530],["Ujung Pandang",9459],["Wajo",14769],["Bontoala",26307],["Ujung Tanah",8346],["Kepulauan Sangkarrang",9745],["Tallo",25387],["Panakukkang",8468],["Manggala",6704],["Biringkanaya",4494],["Tamalanrea",3353]].map(([k,v])=>({k,v}));
+const KELAS = [{n:'Sangat padat',c:'#0b2545',t:v=>v>=25000},{n:'Padat',c:'#3e7cb1',t:v=>v>=10000&&v<25000},{n:'Sedang',c:'#13a89e',t:v=>v>=5000&&v<10000},{n:'Rendah',c:'#c9d6e3',t:v=>v<5000}];
+DATA.forEach(d=>d.kl=KELAS.find(x=>x.t(d.v)).n);
+const $=id=>document.getElementById(id);
+const fmt=v=>Math.round(v).toLocaleString('id-ID'), p1=v=>v.toFixed(1).replace('.',',')+'%';
+const colorOf=n=>KELAS.find(x=>x.n===n).c;
+const S={kelas:new Set(),min:0,max:35000,k:'',ord:'d'};
+const filtered=()=>DATA.filter(d=>(!S.kelas.size||S.kelas.has(d.kl))&&d.v>=S.min&&d.v<=S.max&&(!S.k||d.k===S.k));
+const median=a=>{const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2;};
+
+/* ===== CHARTS ===== */
+Chart.defaults.font.family='Inter,"Segoe UI",sans-serif';Chart.defaults.font.size=13;Chart.defaults.animation.duration=250;Chart.defaults.maintainAspectRatio=false;
+const tt=u=>({callbacks:{label:c=>` ${c.dataset.label||c.label}: ${fmt(c.parsed.x??c.parsed.y??c.parsed)}${u}`}});
+const lineKota={id:'kota',afterDatasetsDraw(ch){ if(ch.config.options.kota){const x=ch.scales.x.getPixelForValue(KOTA),a=ch.chartArea,c=ch.ctx;c.save();c.setLineDash([6,4]);c.strokeStyle='#d9822b';c.lineWidth=2;c.beginPath();c.moveTo(x,a.top);c.lineTo(x,a.bottom);c.stroke();c.restore();}}};
+const C={};
+C.rank=new Chart($('cRank'),{type:'bar',plugins:[lineKota],data:{labels:[],datasets:[{label:'Kepadatan',data:[],backgroundColor:[]}]},
+ options:{kota:1,indexAxis:'y',plugins:{legend:{display:false},tooltip:tt(' jiwa/km²')},scales:{x:{beginAtZero:true,title:{display:true,text:'Jiwa per km²'},ticks:{callback:v=>fmt(v)}}}}});
+C.dev=new Chart($('cDev'),{type:'bar',data:{labels:[],datasets:[{label:'Selisih vs kota',data:[],backgroundColor:[]}]},
+ options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.x>=0?'+':''}${c.parsed.x.toFixed(1)}% dari rata-rata kota`}}},scales:{x:{title:{display:true,text:'Selisih (%)'},ticks:{callback:v=>v+'%'}}}}});
+C.kelas=new Chart($('cKelas'),{type:'doughnut',data:{labels:[],datasets:[{data:[],backgroundColor:[]}]},options:{cutout:'58%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.parsed} kecamatan`}}}}});
+C.avg=new Chart($('cAvg'),{type:'bar',data:{labels:[],datasets:[{label:'Rata-rata',data:[],backgroundColor:[]}]},options:{plugins:{legend:{display:false},tooltip:tt(' jiwa/km²')},scales:{y:{beginAtZero:true,title:{display:true,text:'Jiwa per km²'},ticks:{callback:v=>fmt(v)}},x:{title:{display:true,text:'Kelas'}}}}});
+C.curve=new Chart($('cCurve'),{type:'line',data:{labels:[],datasets:[{label:'Kepadatan',data:[],borderColor:'#13a89e',backgroundColor:'#13a89e',pointRadius:4,tension:.2}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>c[0].dataset.nm[c[0].dataIndex],label:c=>` ${fmt(c.parsed.y)} jiwa/km²`}}},scales:{x:{title:{display:true,text:'Peringkat'}},y:{beginAtZero:true,title:{display:true,text:'Jiwa per km²'},ticks:{callback:v=>fmt(v)}}}}});
+
+/* ===== INSIGHTS ===== */
+function insights(F){
+  if(F.length<3) return [{t:'Data terlalu sedikit',x:'Kurang dari 3 kecamatan sesuai filter.',r:'Longgarkan filter untuk melihat temuan.'}];
+  const s=[...F].sort((a,b)=>b.v-a.v),top=s[0],bot=s[s.length-1],ra=F.reduce((t,d)=>t+d.v,0)/F.length,ab=F.filter(d=>d.v>KOTA),sp=F.filter(d=>d.kl==='Sangat padat');
+  const o=[];
+  o.push({k:'warn',t:`${top.k} terpadat: ${fmt(top.v)} jiwa/km²`,x:`Sekitar ${(top.v/bot.v).toFixed(1).replace('.',',')}× kecamatan terendah (${bot.k}, ${fmt(bot.v)}) dan ${(top.v/KOTA).toFixed(1).replace('.',',')}× rata-rata kota.`,r:'Apakah layanan dasar (air, sanitasi, kesehatan, ruang terbuka) di kecamatan terpadat sudah sepadan dengan beban penduduknya?'});
+  if(sp.length) o.push({k:'warn',t:`${sp.length} kecamatan masuk kelas sangat padat`,x:`${sp.map(d=>d.k).join(', ')}.${sp.length>1?' Rata-ratanya '+fmt(sp.reduce((t,d)=>t+d.v,0)/sp.length)+' jiwa/km².':''}`,r:'Haruskah program penataan permukiman dan mitigasi bencana diprioritaskan di kelompok ini?'});
+  o.push({t:`${ab.length} dari ${F.length} kecamatan di atas rata-rata kota`,x:`Rata-rata sederhana kecamatan tampil ${fmt(ra)} jiwa/km² vs ${fmt(KOTA)} untuk kota. ${ra>KOTA?'Selisih ini kemungkinan karena kecamatan luas berkepadatan rendah menarik angka kota ke bawah; perlu data luas wilayah untuk memastikan.':''}`,r:'Bisakah data luas wilayah dan jumlah penduduk ditambahkan agar analisis ditimbang dengan benar?'});
+  const rend=F.filter(d=>d.kl==='Rendah');
+  if(rend.length) o.push({k:'good',t:`Ruang tumbuh di ${rend.map(d=>d.k).join(' dan ')}`,x:`Kepadatan ${rend.map(d=>fmt(d.v)).join(' dan ')} jiwa/km², jauh di bawah kota.`,r:'Apakah wilayah ini cocok diarahkan sebagai kawasan penyangga pertumbuhan permukiman dan fasilitas baru?'});
+  const sg=s.slice(0,-1).map((d,i)=>({a:d,b:s[i+1],g:d.v-s[i+1].v})).sort((x,y)=>y.g-x.g)[0];
+  o.push({t:`Jarak terbesar antar peringkat: ${fmt(sg.g)} jiwa/km²`,x:`Antara ${sg.a.k} (${fmt(sg.a.v)}) dan ${sg.b.k} (${fmt(sg.b.v)}).`,r:'Apakah kebijakan perlu dibedakan antara kelompok di atas dan di bawah jarak ini?'});
+  const isl=F.find(d=>d.k==='Kepulauan Sangkarrang'); if(isl) o.push({t:'Kepulauan Sangkarrang punya karakter berbeda',x:`Kepadatannya ${fmt(isl.v)} jiwa/km², tetapi wilayahnya berupa pulau-pulau.`,r:'Apakah indikator layanan untuk wilayah kepulauan perlu dipisahkan dari daratan?'});
+  return o;
+}
+
+/* ===== RENDER ===== */
+function render(){
+  const F=filtered(),all=F.length>0,s=[...F].sort((a,b)=>b.v-a.v),vs=F.map(d=>d.v);
+  $('scope').textContent=`${F.length} dari ${DATA.length} kecamatan tampil`;
+  $('vMin').textContent=fmt(S.min);$('vMax').textContent=fmt(S.max);
+  const rel=v=>{const d=(v-KOTA)/KOTA*100;return `<span class="${d>=0?'up':'dn'}">${d>=0?'▲':'▼'} ${Math.abs(d).toFixed(1).replace('.',',')}%</span> <span class="na">vs kota</span>`;};
+  const ra=all?vs.reduce((a,b)=>a+b,0)/F.length:0;
+  const K=[['Kepadatan Kota Makassar',fmt(KOTA)+' /km²','<span class="na">Angka resmi seluruh kota</span>'],
+   ['Kecamatan terpadat',all?s[0].k:'–',all?`${fmt(s[0].v)} /km² ${rel(s[0].v)}`:''],
+   ['Kecamatan terendah',all?s[s.length-1].k:'–',all?`${fmt(s[s.length-1].v)} /km² ${rel(s[s.length-1].v)}`:''],
+   ['Rata-rata kecamatan',all?fmt(ra)+' /km²':'–',all?rel(ra):''],
+   ['Median kecamatan',all?fmt(median(vs))+' /km²':'–',all?rel(median(vs)):''],
+   ['Rasio terpadat : terendah',all?(s[0].v/s[s.length-1].v).toFixed(1).replace('.',',')+'×':'–','<span class="na">Kesenjangan antar kecamatan</span>'],
+   ['Kecamatan di atas rata-rata kota',all?`${F.filter(d=>d.v>KOTA).length} dari ${F.length}`:'–',all?`<span class="na">${p1(F.filter(d=>d.v>KOTA).length/F.length*100)} dari kecamatan tampil</span>`:'']];
+  $('kpis').innerHTML=K.map(k=>`<div class="kpi"><div class="l">${k[0]}</div><div class="v">${k[1]}</div><div class="t">${k[2]}</div></div>`).join('');
+  const r=[...F].sort(S.ord==='n'?(a,b)=>a.k.localeCompare(b.k):S.ord==='a'?(a,b)=>a.v-b.v:(a,b)=>b.v-a.v);
+  C.rank.data.labels=r.map(d=>d.k);C.rank.data.datasets[0].data=r.map(d=>d.v);C.rank.data.datasets[0].backgroundColor=r.map(d=>colorOf(d.kl));C.rank.update();
+  C.dev.data.labels=r.map(d=>d.k);C.dev.data.datasets[0].data=r.map(d=>(d.v-KOTA)/KOTA*100);C.dev.data.datasets[0].backgroundColor=r.map(d=>d.v>=KOTA?'#c2410c':'#15803d');C.dev.update();
+  const kc=KELAS.map(k=>({k,a:F.filter(d=>d.kl===k.n)})).filter(x=>x.a.length);
+  C.kelas.data.labels=kc.map(x=>x.k.n);C.kelas.data.datasets[0].data=kc.map(x=>x.a.length);C.kelas.data.datasets[0].backgroundColor=kc.map(x=>x.k.c);C.kelas.update();
+  C.avg.data.labels=kc.map(x=>x.k.n);C.avg.data.datasets[0].data=kc.map(x=>x.a.reduce((t,d)=>t+d.v,0)/x.a.length);C.avg.data.datasets[0].backgroundColor=kc.map(x=>x.k.c);C.avg.update();
+  C.curve.data.labels=s.map((d,i)=>i+1);C.curve.data.datasets[0].data=s.map(d=>d.v);C.curve.data.datasets[0].nm=s.map(d=>d.k);C.curve.update();
+  $('ins').innerHTML=insights(F).map(i=>`<div class="in ${i.k||''}"><h3>${i.t}</h3><p>${i.x}</p><p class="rec">${i.r}</p></div>`).join('');
+  $('tbl').innerHTML='<tr><th>Peringkat</th><th>Kecamatan</th><th>Kelas</th><th class="n">Jiwa/km²</th><th class="n">Selisih vs kota</th></tr>'+s.map((d,i)=>`<tr><td>${i+1}</td><td>${d.k}</td><td>${d.kl}</td><td class="n">${fmt(d.v)}</td><td class="n">${d.v>=KOTA?'+':''}${((d.v-KOTA)/KOTA*100).toFixed(1).replace('.',',')}%</td></tr>`).join('');
+}
+
+/* ===== FILTER UI ===== */
+KELAS.forEach(k=>{const b=document.createElement('button');b.className='chip';b.textContent=k.n;b.onclick=()=>{S.kelas.has(k.n)?S.kelas.delete(k.n):S.kelas.add(k.n);b.classList.toggle('on',S.kelas.has(k.n));render();};$('fKelas').appendChild(b);});
+$('kl').innerHTML=DATA.map(d=>`<option value="${d.k}">`).join('');
+$('rMin').oninput=e=>{S.min=+e.target.value;if(S.min>S.max){S.max=S.min;$('rMax').value=S.max;}render();};
+$('rMax').oninput=e=>{S.max=+e.target.value;if(S.max<S.min){S.min=S.max;$('rMin').value=S.min;}render();};
+$('fK').oninput=e=>{S.k=DATA.some(d=>d.k===e.target.value)?e.target.value:'';render();};
+$('ord').onchange=e=>{S.ord=e.target.value;render();};
+$('reset').onclick=()=>{S.kelas.clear();S.min=0;S.max=35000;S.k='';S.ord='d';$('rMin').value=0;$('rMax').value=35000;$('fK').value='';$('ord').value='d';document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));render();};
+render();
+</script>
+</body>
+</html>
